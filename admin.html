@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HUP – Einreichungen</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{background:#f1f5f9;font-family:system-ui,sans-serif;color:#111}
+.tag{display:inline-block;background:#fee2e2;color:#991b1b;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;margin:2px}
+details>summary{cursor:pointer;list-style:none}
+details>summary::-webkit-details-marker{display:none}
+.dl{display:grid;grid-template-columns:180px 1fr;gap:6px 12px;font-size:12px;padding:5px 0;border-bottom:1px solid #f8fafc}
+.dk{color:#94a3b8;font-weight:600}
+.dv{color:#1e293b;white-space:pre-wrap;word-break:break-word}
+</style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-4xl mx-auto">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-black">Einreichungen</h1>
+      <p class="text-sm text-slate-400 mt-1" id="meta">Wird geladen…</p>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <button onclick="exportExcel()" id="xlsBtn" class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40">⬇ Excel-Export</button>
+      <button onclick="exportJSON()" class="inline-flex items-center gap-2 rounded-xl bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-300">⬇ JSON-Export</button>
+      <label class="inline-flex items-center gap-2 rounded-xl bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-300 cursor-pointer">
+        ⬆ JSON-Import <input type="file" accept=".json" onchange="importJSON(event)" class="hidden"/>
+      </label>
+      <a href="index.html" class="inline-flex items-center gap-2 rounded-xl bg-[#e0001b] px-4 py-2 text-sm font-bold text-white hover:opacity-90">+ Neues Formular</a>
+    </div>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<script>
+const LABELS = [
+  ["Problemfeld",    s => (s.pf||[]).join(", ")],
+  ["Sonstiges PF",   s => s.pfS],
+  ["Ziel",           s => s.ziel],
+  ["Kundentyp",      s => s.ktyp],
+  ["Besonderheiten", s => s.beson],
+  ["Ablauf",         s => (s.abl||[]).filter(Boolean).map((x,i)=>`${i+1}. ${x}`).join("\n")],
+  ["Problem: Schritt",   s => s.pSch],
+  ["Problem: Passiert",  s => s.pWas],
+  ["Problem: Erwartet",  s => s.pErw],
+  ["Problem: Unklar",    s => s.pUnk],
+  ["Daten: Benötigt",    s => s.dBra],
+  ["Daten: Wo erwartet", s => s.dErw],
+  ["Daten: Wo gefunden", s => s.dFan],
+  ["Daten: Prüfung",     s => s.dPru],
+  ["Zusatz: Buchhaltung",    s => s.zBuch],
+  ["Zusatz: Storno",         s => s.zSto],
+  ["Zusatz: Adresse",        s => s.zAdr],
+  ["Zusatz: Mahnwesen",      s => s.zMah],
+  ["Zusatz: Fehlermeldung",  s => s.zFeh],
+  ["Zusatz: Wiedervorlage",  s => s.zWie],
+  ["Zusatz: Oberfläche",     s => s.zObe],
+  ["Zusatz: Trägerdienste",  s => s.zTra],
+  ["Workaround",    s => s.work],
+  ["Akt. Dauer",    s => s.dauI],
+  ["Erw. Dauer",    s => s.dauE],
+  ["Häufigkeit",    s => s.haeu],
+  ["Risiken",       s => (s.risiken||[]).join(", ")],
+  ["Risikobeschr.", s => s.rskT],
+  ["Soll-Zustand",  s => s.soll],
+  ["Fertig-Def.",   s => s.fert],
+];
+
+function loadSubs() {
+  return JSON.parse(localStorage.getItem("hup-submissions") || "[]").sort((a,b) => b.ts - a.ts);
+}
+
+function render() {
+  const subs = loadSubs();
+  document.getElementById("meta").textContent =
+    `${subs.length} Einreichung${subs.length!==1?"en":""} • Benachrichtigungen an okur@taz.de`;
+  document.getElementById("xlsBtn").disabled = subs.length === 0;
+
+  const list = document.getElementById("list");
+  if (subs.length === 0) {
+    list.innerHTML = '<div class="text-center mt-16 text-slate-400"><p class="text-4xl mb-3">📭</p><p>Noch keine Einreichungen vorhanden.</p><p class="text-sm mt-2">Fülle das <a href="index.html" class="underline">Formular</a> aus, um die erste Einreichung zu erstellen.</p></div>';
+    return;
+  }
+
+  list.innerHTML = subs.map((s, i) => {
+    const tags = (s.pf||[]).map(t=>`<span class="tag">${t}</span>`).join("") ||
+      '<span class="text-slate-400 text-xs">Kein Problemfeld</span>';
+    const preview = s.ziel ? `<p class="text-sm text-slate-500 mt-1 line-clamp-1">${s.ziel.slice(0,100)}</p>` : "";
+    const date = new Date(s.ts).toLocaleString("de-DE");
+
+    const rows = LABELS.map(([label, fn]) => {
+      const v = fn(s);
+      if (!v) return "";
+      return `<div class="dl"><span class="dk">${label}</span><span class="dv">${v}</span></div>`;
+    }).join("");
+
+    return `
+      <details class="bg-white rounded-2xl border border-slate-200 mb-3 overflow-hidden">
+        <summary class="p-5 hover:bg-slate-50 transition-colors">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="mb-1">${tags}</div>
+              ${preview}
+              <p class="text-xs text-slate-400 mt-2">${date}</p>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <button onclick="event.preventDefault();deleteSub('${s.id}')" class="text-xs text-red-400 hover:text-red-600 font-semibold">Löschen</button>
+              <span class="text-slate-300 text-sm">Details ↓</span>
+            </div>
+          </div>
+        </summary>
+        <div class="border-t border-slate-100 px-5 py-4">${rows}</div>
+      </details>
+    `;
+  }).join("");
+}
+
+function deleteSub(id) {
+  if (!confirm("Diesen Eintrag wirklich löschen?")) return;
+  const subs = loadSubs().filter(s => s.id !== id);
+  localStorage.setItem("hup-submissions", JSON.stringify(subs));
+  render();
+}
+
+function exportExcel() {
+  const XLSX = window.XLSX;
+  const subs = loadSubs();
+  const rows = subs.map(s => {
+    const row = { "Datum": new Date(s.ts).toLocaleString("de-DE") };
+    LABELS.forEach(([label, fn]) => { row[label] = fn(s) || ""; });
+    return row;
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = Object.keys(rows[0]||{}).map(() => ({ wch: 30 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Einreichungen");
+  XLSX.writeFile(wb, `HUP-Einreichungen-${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportJSON() {
+  const subs = loadSubs();
+  const blob = new Blob([JSON.stringify(subs, null, 2)], {type: "application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `HUP-Einreichungen-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      const existing = loadSubs();
+      const existingIds = new Set(existing.map(s => s.id));
+      const newSubs = imported.filter(s => !existingIds.has(s.id));
+      const merged = [...existing, ...newSubs];
+      localStorage.setItem("hup-submissions", JSON.stringify(merged));
+      render();
+      alert(`✓ ${newSubs.length} neue Einreichung(en) importiert.`);
+    } catch(e) {
+      alert("Fehler beim Importieren: " + e.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+render();
+</script>
+</body>
+</html>
