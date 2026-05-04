@@ -99,6 +99,11 @@ const LABELS = [
   ["Kundentyp",      s => s.ktyp],
   ["Besonderheiten", s => s.beson],
   ["Ablauf",         s => (s.abl||[]).filter(Boolean).map((x,i)=>`${i+1}. ${x}`).join("\n")],
+  ["Screenshots",    s => {
+    const imgs = (s.ablImg||[]).filter(Boolean);
+    if (!imgs.length) return null;
+    return `__imgs__${JSON.stringify(imgs)}`;
+  }],
   ["Problem: Schritt",   s => s.pSch],
   ["Problem: Passiert",  s => s.pWas],
   ["Problem: Erwartet",  s => s.pErw],
@@ -135,11 +140,17 @@ function chk(val, all) {
 }
 
 function buildFormView(s) {
-  const abl = (s.abl||[]).map((txt,i) => `
+  const abl = (s.abl||[]).map((txt, i) => {
+    const img = (s.ablImg||[])[i];
+    return `
     <div class="fm-step">
       <span class="fm-step-num">${i+1}.</span>
-      <div class="fm-val" style="flex:1;min-height:36px">${txt ? escHtml(txt) : '<span style="color:#94a3b8;font-style:italic">–</span>'}</div>
-    </div>`).join("");
+      <div style="flex:1">
+        <div class="fm-val" style="min-height:36px">${txt ? escHtml(txt) : '<span style="color:#94a3b8;font-style:italic">–</span>'}</div>
+        ${img ? `<img src="${img}" style="margin-top:8px;max-width:100%;max-height:220px;border-radius:10px;border:1px solid #e2e8f0;object-fit:contain;display:block">` : ''}
+      </div>
+    </div>`;
+  }).join("");
 
   const zusatz = ZUSATZ_ALL.map(([k,l]) => `
     <div class="fm-sub-card">
@@ -302,6 +313,18 @@ function render() {
     const rows = LABELS.map(([label, fn]) => {
       const val = fn(s);
       if (!val) return "";
+      if (val.startsWith("__imgs__")) {
+        const imgs = JSON.parse(val.slice(8));
+        const thumbs = imgs.map((src, i) => {
+          const stepNums = (s.abl||[]).map((t,idx) => (s.ablImg||[])[idx] === src ? idx+1 : null).filter(Boolean);
+          const stepLabel = stepNums.length ? `Schritt ${stepNums[0]}` : `Bild ${i+1}`;
+          return `<div style="display:inline-block;margin:4px;text-align:center;vertical-align:top">
+            <img src="${src}" style="height:80px;max-width:130px;border-radius:8px;border:1px solid #e2e8f0;object-fit:cover;display:block;cursor:pointer" onclick="showImgFull('${src}')" title="Klicken zum Vergrößern">
+            <span style="font-size:10px;color:#94a3b8;margin-top:2px;display:block">${stepLabel}</span>
+          </div>`;
+        }).join("");
+        return `<div class="dl"><span class="dk">Screenshots</span><div>${thumbs}</div></div>`;
+      }
       return `<div class="dl"><span class="dk">${label}</span><span class="dv">${val}</span></div>`;
     }).join("");
 
@@ -338,12 +361,28 @@ function deleteSub(id) {
   render();
 }
 
+function showImgFull(src) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px';
+  overlay.onclick = () => overlay.remove();
+  const img = document.createElement('img');
+  img.src = src;
+  img.style.cssText = 'max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.4)';
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
+}
+
 function exportExcel() {
   const XLSX = window.XLSX;
   const subs = loadSubs();
   const rows = subs.map(s => {
+    const imgCount = (s.ablImg||[]).filter(Boolean).length;
     const row = { "Datum": new Date(s.ts).toLocaleString("de-DE") };
-    LABELS.forEach(([label, fn]) => { row[label] = fn(s) || ""; });
+    LABELS.filter(([l]) => l !== "Screenshots").forEach(([label, fn]) => {
+      const v = fn(s);
+      row[label] = (v && !v.startsWith("__imgs__")) ? v : "";
+    });
+    row["Screenshots (Anzahl)"] = imgCount > 0 ? imgCount : "";
     return row;
   });
   const ws = XLSX.utils.json_to_sheet(rows);
