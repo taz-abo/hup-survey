@@ -13,6 +13,10 @@ body{background:#e5e7eb;font-family:system-ui,sans-serif;color:#111}
 .field-sm{width:100%;border:1px solid #cbd5e1;border-radius:.75rem;padding:.6rem .75rem;background:#fff;min-height:2.75rem;font-family:inherit;font-size:13px;outline:none}
 .field-sm:focus{border-color:#94a3b8}
 .step-in{flex:1;border:1px solid #cbd5e1;border-radius:.75rem;padding:.65rem .75rem;background:#fff;min-height:2.9rem;font-family:inherit;font-size:13px;resize:vertical;outline:none;width:100%}
+.img-btn{display:inline-flex;align-items:center;gap:5px;background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:8px;padding:5px 11px;font-size:12px;color:#64748b;cursor:pointer;margin-top:6px;transition:all .15s}
+.img-btn:hover{background:#f1f5f9;border-color:#94a3b8;color:#475569}
+.img-preview{display:none;margin-top:8px;border-radius:10px;max-height:160px;max-width:100%;border:1px solid #e2e8f0;object-fit:contain}
+.img-rem{display:none;margin-top:4px;background:none;border:none;font-size:11px;color:#ef4444;cursor:pointer;padding:0;font-weight:600}
 .chk{display:flex;gap:.5rem;align-items:flex-start;border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;cursor:pointer;font-size:13px;transition:border-color .15s,background .15s}
 .chk:hover{border-color:#94a3b8}
 input[type=checkbox]{accent-color:#e0001b;margin-top:1px;flex-shrink:0}
@@ -93,14 +97,14 @@ input[type=checkbox]{accent-color:#e0001b;margin-top:1px;flex-shrink:0}
     <!-- 5. Ablauf -->
     <div class="avoid-break rounded-2xl border border-slate-200 p-6">
       <h2 class="mb-4 flex items-center gap-2 text-xl font-bold"><span class="text-[#e0001b]">📋</span>5. Ablauf Schritt für Schritt</h2>
-      <p class="mb-3 text-sm text-slate-600">Bitte möglichst konkret: Maske, Klick, Eingabe, Ergebnis.</p>
-      <div class="space-y-3">
-        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b]">1.</span><textarea class="step-in" id="abl1" placeholder="Schritt 1"></textarea></div>
-        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b]">2.</span><textarea class="step-in" id="abl2" placeholder="Schritt 2"></textarea></div>
-        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b]">3.</span><textarea class="step-in" id="abl3" placeholder="Schritt 3"></textarea></div>
-        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b]">4.</span><textarea class="step-in" id="abl4" placeholder="Schritt 4"></textarea></div>
-        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b]">5.</span><textarea class="step-in" id="abl5" placeholder="Schritt 5"></textarea></div>
-        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b]">6.</span><textarea class="step-in" id="abl6" placeholder="Schritt 6"></textarea></div>
+      <p class="mb-3 text-sm text-slate-600">Bitte möglichst konkret: Maske, Klick, Eingabe, Ergebnis. Screenshots können direkt angehängt werden.</p>
+      <div class="space-y-4">
+        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b] flex-shrink-0">1.</span><div style="flex:1"><textarea class="step-in" id="abl1" placeholder="Schritt 1"></textarea><label class="img-btn"><span>📎</span> Screenshot anhängen<input type="file" accept="image/*" onchange="handleImg(event,1)" id="imgInput1" style="display:none"></label><button class="img-rem" id="imgRemBtn1" onclick="removeImg(1)">✕ Entfernen</button><img class="img-preview" id="imgPrev1"></div></div>
+        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b] flex-shrink-0">2.</span><div style="flex:1"><textarea class="step-in" id="abl2" placeholder="Schritt 2"></textarea><label class="img-btn"><span>📎</span> Screenshot anhängen<input type="file" accept="image/*" onchange="handleImg(event,2)" id="imgInput2" style="display:none"></label><button class="img-rem" id="imgRemBtn2" onclick="removeImg(2)">✕ Entfernen</button><img class="img-preview" id="imgPrev2"></div></div>
+        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b] flex-shrink-0">3.</span><div style="flex:1"><textarea class="step-in" id="abl3" placeholder="Schritt 3"></textarea><label class="img-btn"><span>📎</span> Screenshot anhängen<input type="file" accept="image/*" onchange="handleImg(event,3)" id="imgInput3" style="display:none"></label><button class="img-rem" id="imgRemBtn3" onclick="removeImg(3)">✕ Entfernen</button><img class="img-preview" id="imgPrev3"></div></div>
+        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b] flex-shrink-0">4.</span><div style="flex:1"><textarea class="step-in" id="abl4" placeholder="Schritt 4"></textarea><label class="img-btn"><span>📎</span> Screenshot anhängen<input type="file" accept="image/*" onchange="handleImg(event,4)" id="imgInput4" style="display:none"></label><button class="img-rem" id="imgRemBtn4" onclick="removeImg(4)">✕ Entfernen</button><img class="img-preview" id="imgPrev4"></div></div>
+        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b] flex-shrink-0">5.</span><div style="flex:1"><textarea class="step-in" id="abl5" placeholder="Schritt 5"></textarea><label class="img-btn"><span>📎</span> Screenshot anhängen<input type="file" accept="image/*" onchange="handleImg(event,5)" id="imgInput5" style="display:none"></label><button class="img-rem" id="imgRemBtn5" onclick="removeImg(5)">✕ Entfernen</button><img class="img-preview" id="imgPrev5"></div></div>
+        <div class="flex items-start gap-3"><span class="mt-3 w-6 font-bold text-[#e0001b] flex-shrink-0">6.</span><div style="flex:1"><textarea class="step-in" id="abl6" placeholder="Schritt 6"></textarea><label class="img-btn"><span>📎</span> Screenshot anhängen<input type="file" accept="image/*" onchange="handleImg(event,6)" id="imgInput6" style="display:none"></label><button class="img-rem" id="imgRemBtn6" onclick="removeImg(6)">✕ Entfernen</button><img class="img-preview" id="imgPrev6"></div></div>
       </div>
     </div>
 
@@ -213,6 +217,47 @@ input[type=checkbox]{accent-color:#e0001b;margin-top:1px;flex-shrink:0}
 </main>
 
 <script>
+const imgData = {1:'',2:'',3:'',4:'',5:'',6:''};
+
+function compressImg(file, cb) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1400;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleImg(e, n) {
+  const file = e.target.files[0];
+  if (!file) return;
+  compressImg(file, src => {
+    imgData[n] = src;
+    const prev = document.getElementById('imgPrev'+n);
+    const remBtn = document.getElementById('imgRemBtn'+n);
+    prev.src = src;
+    prev.style.display = 'block';
+    remBtn.style.display = 'inline-block';
+  });
+}
+
+function removeImg(n) {
+  imgData[n] = '';
+  document.getElementById('imgPrev'+n).style.display = 'none';
+  document.getElementById('imgPrev'+n).src = '';
+  document.getElementById('imgRemBtn'+n).style.display = 'none';
+  document.getElementById('imgInput'+n).value = '';
+}
+
 function collectData() {
   const checked = (name) =>
     [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
@@ -225,6 +270,7 @@ function collectData() {
     ktyp: document.getElementById("ktyp").value,
     beson:document.getElementById("beson").value,
     abl:  [1,2,3,4,5,6].map(i => document.getElementById("abl"+i).value),
+    ablImg: [1,2,3,4,5,6].map(i => imgData[i] || ''),
     pSch: document.getElementById("pSch").value,
     pWas: document.getElementById("pWas").value,
     pErw: document.getElementById("pErw").value,
